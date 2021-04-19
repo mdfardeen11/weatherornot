@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel='stylesheet' type='text/css' href='https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.11.0/maps/maps.css'>
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.11.0/maps/maps-web.min.js"></script>
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.11.0/services/services-web.min.js"></script>
+
+    <script src='color.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+</head>
+
+
+<body style="margin: 0%; position: absolute; " >
+
+    
+  <span id='palette_1' style='margin:6px;padding: 2px;background-color: black;'>
+    <span style='width: 50px; height: 10px;' v-for='(color,index) in palette_1'
+      v-bind:style='{"background-color": color}' v-on:click="changePalette(index)">
+      {{color}} </span>
+  </span>
+
+  <span id='palette_2' style='margin:2px;padding: 2px;background-color: black'>
+    <span style='width: 50px; height: 10px;' v-for='(color,index) in palette_2'
+      v-bind:style='{"background-color": color}' v-on:click="changePalette(index)">
+      {{color}} </span>
+  </span>
+
+  <span id='palette_3' style='margin:2px;padding: 2px;background-color: black'>
+    <span style='width: 50px; height: 10px;' v-for='(color,index) in palette_3'
+      v-bind:style='{"background-color": color}' v-on:click="changePalette(index)">
+      {{color}} </span>
+  </span>
+
+  <br>
+
+    <div style='width:100vw; height:97vh; position:relative;' id='map'></div>
+    <script>
+        var BANGALORE = {lat: 12.9716, lng: 77.5946}
+        var map = tt.map({
+            key:"MQhgkAHWGqK4c1tcaHvtbpv7IOsQWbTF",
+            container:'map',
+            center: BANGALORE,
+            zoom: 12,
+            // style: './lightmap.json'
+        });
+
+        var cloudSource = {
+            type: 'raster',
+            tiles: ['https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=e6e0a87ec37e33cb8595f42f407d5847'],
+            tileSize: 256,
+            minZoom:0,
+            maxZoom:12,
+            attribution: 'OpenWeatherMap.Org'
+        }
+
+        var cloudLayer = {
+            'id':'cloud_layer',
+            'type': 'raster',
+            'source':'cloud_source',
+            'layout':{'visibility':'visible'}
+
+        }
+
+        var rainSource = {
+            type: 'raster',
+            tiles: ['https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=e6e0a87ec37e33cb8595f42f407d5847'],
+            tileSize: 256,
+            minZoom:0,
+            maxZoom:12,
+            attribution: 'OpenWeatherMap.Org'
+        }
+
+        var rainLayer = {
+            'id':'rain_layer',
+            'type': 'raster',
+            'source':'rain_source',
+            'layout':{'visibility':'visible'}
+
+        }
+
+        // map.on('load',function(){
+        //     map.addSource('cloud_source',cloudSource)
+        //     map.addLayer(cloudLayer)
+
+        //     map.addSource('rain_source',rainSource)
+        //     map.addLayer(rainLayer)
+        // })
+
+       
+
+        map.on('click', function(event){
+            console.log(event.lngLat)
+            weatherAround(event.lngLat)
+        })
+
+        function createDOM(city) {
+            let div = document.createElement('div');
+            
+            let h3 = document.createElement('h3');
+            let br = document.createElement('br');
+            let p = document.createElement('p');
+            let heading = document.createTextNode(city.name);
+            h3.appendChild(heading)
+            
+            
+
+            let code = city.weather[0].icon;
+            let image = document.createElement('img');
+            image.src = 'http://openweathermap.org/img/wn/'+code+'.png'
+            
+            let windspeed = (city.wind.speed * 3.6);
+            let wind = document.createTextNode('Wind Speed: ' + windspeed.toFixed(0) + ' km/h');
+            
+
+            let temp = document.createTextNode('Temperature: ' + city.main.temp.toFixed(0) + ' °C');
+            
+
+            let humid = document.createTextNode('Humidity: ' + city.main.humidity + '%' );
+           
+            let description = document.createTextNode(city.weather[0].description);
+
+            div.appendChild(h3);
+            div.appendChild(br);
+            div.appendChild(image);
+            div.appendChild(br);
+            div.appendChild(description);
+            div.append(br);
+            div.appendChild(temp);
+            div.appendChild(br);
+            div.appendChild(humid);
+            div.appendChild(br);
+            div.appendChild(wind);
+
+            return div;
+            
+        }
+
+
+
+        async function weatherAround(lngLat){
+            var url = 'https://api.openweathermap.org/data/2.5/find?lat={lat}&lon={lon}&cnt=5&units=metric&appid=e6e0a87ec37e33cb8595f42f407d5847'
+            url = url.replace('{lat}',lngLat.lat)
+            url = url.replace('{lon}',lngLat.lng)
+            let weatherResponse = await fetch(url)
+            let weatherData = await weatherResponse.json()
+            console.log(weatherData)
+            weatherData.list.forEach(element => {
+               var popup = new tt.Popup({ maxWidth: "100px" }).setDOMContent(createDOM(element)).setLngLat(element.coord).addTo(map)
+
+             })
+        }
+
+
+            
+        var palette_1 = new Vue({
+        el: '#palette_1',
+        data: {
+            palette_1: [
+            '#df1b12', '#ffffff', '#000000', '#8dc3eb', '#4a4c4c', '#61ade0'
+            ],
+            changePalette: function (index) {
+            changePalette(palette_1.palette_1, index)
+            }
+        }
+        })
+
+        var palette_2 = new Vue({
+        el: '#palette_2',
+        data: {
+            palette_2: ['#003049', '#d62828', '#f77f00', '#fcbf49', '#eae2b7', '#ffffff'],
+            changePalette: function (index) {
+            changePalette(palette_2.palette_2, index)
+            }
+        }
+        })
+
+        var palette_3 = new Vue({
+        el: '#palette_3',
+        data: {
+            palette_3: ['#faf3dd', '#f9dbbd', '#e9afa3', '#08415c', '#283044', '#000000'],
+            changePalette: function (index) {
+            changePalette(palette_3.palette_3, index)
+            }
+        }
+        })
+
+        // Return the new assigned color from the palette. 
+        convertColor = function (palette, index, opacity) {
+        if (index >= palette.length) index = 0;
+        return hexToRGBA(palette[index], opacity)
+        }
+
+        // This is the index to rotate from the color array of the selected Palette.
+        var currentColorIndex = 0
+
+        updateColor = function (paintColor, palette) {
+
+        if (paintColor.startsWith('#')) {
+            paintColor = hexToRGBA(paintColor)
+        }
+
+        if (paintColor.startsWith('rgb(')) {
+            rgb = RGBToArray(paintColor)
+            paintColor = convertColor(palette, currentColorIndex)
+        }
+        else if (paintColor.startsWith('rgba(')) {
+            rgba = RGBAToArray(paintColor)
+            paintColor = convertColor(palette, currentColorIndex, rgba[3])
+        }
+
+        currentColorIndex++
+        if (currentColorIndex >= palette.length) currentColorIndex = 0
+        return paintColor
+        }
+
+        function checkElementColor(palette, element, type) {
+        if (element.type == type) {
+            var paintColor = element.paint[type + '-color']
+            if (paintColor) {
+            var isString = paintColor instanceof String
+                || typeof paintColor === "string";
+            if (isString) {
+                element.paint[type + '-color'] = updateColor(paintColor, palette)
+            }
+            else if (paintColor.stops) {
+                paintColor.stops.forEach(element => {
+                var color = element[1]
+                element[1] = updateColor(color, palette)
+                })
+            }
+            }
+            return element
+        }
+        }
+
+        function changeOpacity(layer, alpha) {
+        layer.paint['fill-extrusion-opacity'] = alpha
+        layer.paint['fill-extrusion-vertical-gradient'] = false
+        return layer
+        }
+
+        function isAllowed(id) {
+        var allowed = true
+        var notAllowed = [
+            "Ocean or sea", "Lake", "Other water", "outline",
+        ]
+        notAllowed.forEach(function (value) {
+            if (id.includes(value)) {
+            allowed = false
+            }
+        })
+        return allowed
+        }
+
+        function changePalette(palette, index) {
+        currentColorIndex = index
+        var style = { ...map.getStyle() }
+        var newLayers = []
+        style.layers.forEach(element => {
+
+            if (isAllowed(element.id)) {
+            var layer
+            switch (element.type) {
+                case 'fill-extrusion': layer = checkElementColor(palette, element, 'fill-extrusion')
+                if (layer) layer = changeOpacity(layer, 1)
+                console.log(layer)
+                break
+                case 'fill': layer = checkElementColor(palette, element, 'fill')
+                break
+                case 'line': layer = checkElementColor(palette, element, 'line')
+                break
+                default:
+                layer = element
+
+            }
+            }
+            else {
+            layer = element
+            }
+            if (layer) {
+            newLayers.push(element)
+            }
+        });
+        style.layers = newLayers
+        map.setStyle(style)
+        }
+
+    
+
+    </script>
+
+</body>
+</html>
